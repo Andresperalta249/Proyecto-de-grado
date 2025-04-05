@@ -18,12 +18,18 @@ $device_id = $_GET['id'];
 
 // Verificar si el usuario tiene acceso al dispositivo
 $stmt = $conn->prepare("
-    SELECT d.*, u.nombre as nombre_usuario
+    SELECT d.*, m.nombre as nombre_mascota, u.nombre as nombre_usuario
     FROM devices d
-    JOIN users u ON d.id_user = u.id
-    WHERE d.id = ? AND (d.id_user = ? OR ? = 'admin')
+    INNER JOIN mascotas m ON d.id_mascota = m.id
+    INNER JOIN users u ON m.id_user = u.id
+    WHERE d.id = :device_id 
+    AND (m.id_user = :user_id OR :rol = 'Administrador')
 ");
-$stmt->execute([$device_id, $_SESSION['user_id'], $_SESSION['user_role']]);
+$stmt->execute([
+    ':device_id' => $device_id,
+    ':user_id' => $_SESSION['user_id'],
+    ':rol' => $_SESSION['rol']
+]);
 $device = $stmt->fetch();
 
 if (!$device) {
@@ -86,7 +92,7 @@ $ritmos = array_reverse($ritmos);
                     <li class="nav-item">
                         <a class="nav-link" href="dashboard.php">Dashboard</a>
                     </li>
-                    <?php if($_SESSION['user_role'] == 'admin'): ?>
+                    <?php if($_SESSION['rol'] == 'Administrador'): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="admin.php">Administración</a>
                         </li>
@@ -105,7 +111,7 @@ $ritmos = array_reverse($ritmos);
                 <h2>
                     <i class="fas fa-paw me-2"></i><?php echo htmlspecialchars($device['nombre_mascota']); ?>
                 </h2>
-                <?php if($_SESSION['user_role'] == 'admin'): ?>
+                <?php if($_SESSION['rol'] == 'Administrador'): ?>
                     <p class="text-muted">Usuario: <?php echo htmlspecialchars($device['nombre_usuario']); ?></p>
                 <?php endif; ?>
             </div>

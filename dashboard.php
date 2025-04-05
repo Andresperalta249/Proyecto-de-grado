@@ -10,25 +10,27 @@ if (!isset($_SESSION['user_id'])) {
 
 // Obtener dispositivos del usuario
 $stmt = $conn->prepare("
-    SELECT d.*, 
+    SELECT d.*, m.nombre as nombre_mascota,
            (SELECT temperatura FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultima_temperatura,
            (SELECT ritmo_cardiaco FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultimo_ritmo_cardiaco,
            (SELECT timestamp FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultima_lectura
     FROM devices d 
-    WHERE d.id_user = ?
+    INNER JOIN mascotas m ON d.id_mascota = m.id
+    WHERE m.id_user = :user_id
 ");
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute(['user_id' => $_SESSION['user_id']]);
 $dispositivos = $stmt->fetchAll();
 
 // Si es administrador, obtener todos los dispositivos
-if ($_SESSION['user_role'] == 'admin') {
+if ($_SESSION['rol'] == 'Administrador') {
     $stmt = $conn->prepare("
-        SELECT d.*, u.nombre as nombre_usuario,
+        SELECT d.*, m.nombre as nombre_mascota, u.nombre as nombre_usuario,
                (SELECT temperatura FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultima_temperatura,
                (SELECT ritmo_cardiaco FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultimo_ritmo_cardiaco,
                (SELECT timestamp FROM lecturas WHERE id_device = d.id ORDER BY timestamp DESC LIMIT 1) as ultima_lectura
         FROM devices d
-        JOIN users u ON d.id_user = u.id
+        INNER JOIN mascotas m ON d.id_mascota = m.id
+        INNER JOIN users u ON m.id_user = u.id
     ");
     $stmt->execute();
     $dispositivos = $stmt->fetchAll();
@@ -58,7 +60,7 @@ if ($_SESSION['user_role'] == 'admin') {
                     <li class="nav-item">
                         <a class="nav-link active" href="dashboard.php">Dashboard</a>
                     </li>
-                    <?php if($_SESSION['user_role'] == 'admin'): ?>
+                    <?php if($_SESSION['rol'] == 'Administrador'): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="admin.php">Administración</a>
                         </li>
@@ -74,7 +76,7 @@ if ($_SESSION['user_role'] == 'admin') {
     <div class="container mt-4">
         <div class="row mb-4">
             <div class="col">
-                <h2>Bienvenido, <?php echo htmlspecialchars($_SESSION['user_name']); ?></h2>
+                <h2>Bienvenido, <?php echo htmlspecialchars($_SESSION['nombre']); ?></h2>
                 <p class="text-muted">Panel de monitoreo de mascotas</p>
             </div>
             <div class="col-auto">
@@ -92,7 +94,7 @@ if ($_SESSION['user_role'] == 'admin') {
                             <h5 class="card-title">
                                 <i class="fas fa-paw me-2"></i><?php echo htmlspecialchars($dispositivo['nombre_mascota']); ?>
                             </h5>
-                            <?php if($_SESSION['user_role'] == 'admin'): ?>
+                            <?php if($_SESSION['rol'] == 'Administrador'): ?>
                                 <p class="text-muted">Usuario: <?php echo htmlspecialchars($dispositivo['nombre_usuario']); ?></p>
                             <?php endif; ?>
                             
