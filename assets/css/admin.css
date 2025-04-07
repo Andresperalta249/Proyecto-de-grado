@@ -1,0 +1,331 @@
+/* Estilos generales */
+body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f8f9fa;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    background: #343a40;
+    color: #fff;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background: #2c3136;
+}
+
+.sidebar-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.sidebar .nav-link {
+    color: #fff;
+    padding: 10px 20px;
+    transition: all 0.3s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: #2c3136;
+    color: #fff;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main content */
+.main-content {
+    margin-left: 250px;
+    padding: 0;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+/* Navbar */
+.navbar {
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.navbar .btn-link {
+    color: #343a40;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Tablas */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    background-color: #f8f9fa;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    font-weight: 500;
+}
+
+/* Botones */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+    
+    .sidebar-collapsed .sidebar {
+        margin-left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-collapsed .main-content {
+        margin-left: 250px;
+    }
+}
+
+/* Iconos en las tarjetas de estadísticas */
+.icon {
+    opacity: 0.7;
+    transition: all 0.3s;
+}
+
+.card:hover .icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Cursor pointer para filas interactivas */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Estilos para el mapa */
+#map-container {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Modal */
+.modal-content {
+    border-radius: 10px;
+    border: none;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+.card .icon {
+    font-size: 2rem;
+}
+
+/* Estilos para la tabla de dispositivos */
+.table {
+    margin-bottom: 0;
+}
+
+.cursor-pointer:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* Estilos para los íconos en las tarjetas */
+.card .icon {
+    opacity: 0.8;
+}
+
+/* Mejoras visuales para las tarjetas de estadísticas */
+.card-body {
+    padding: 1.5rem;
+}
+
+.text-white h6 {
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.text-white h2 {
+    font-weight: 600;
+}
+
+/* Estilos para la tabla de dispositivos */
+.table thead th {
+    border-top: none;
+    border-bottom-width: 1px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Mejoras para el navbar */
+.navbar {
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-info {
+    color: #fff;
+}
+
+.navbar-text {
+    font-weight: 500;
+}
+
+/* Estilos para las gráficas */
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Estilos para las tablas */
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Estilos para los botones de acción */
+.btn-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Estilos para las alertas */
+.alert-badge {
+    position: relative;
+    display: inline-block;
+}
+
+.alert-badge .badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Estilos para los formularios */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.settings-section h3 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+/* Estilos para las notificaciones */
+.notification-item {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.3s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #e8f4ff;
+}
+
+.notification-item .notification-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Estilos para los indicadores de estado */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-active {
+    background-color: #28a745;
+}
+
+.status-inactive {
+    background-color: #dc3545;
+}
+
+.status-warning {
+    background-color: #ffc107;
+} 
