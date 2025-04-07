@@ -2,42 +2,46 @@
 session_start();
 require_once '../config/database.php';
 
-// Verificar si el usuario está autenticado
-if (!isset($_SESSION['user_id'])) {
+// Verificar si el usuario está logueado y es administrador
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
     http_response_code(401);
-    echo json_encode(['error' => 'No autorizado']);
-    exit();
+    echo json_encode(['success' => false, 'message' => 'No autorizado']);
+    exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
-    $id = $_GET['id'];
-    
-    try {
-        // Verificar si el usuario tiene permiso para eliminar el dispositivo
-        $stmt = $conn->prepare("
-            SELECT d.id 
-            FROM devices d 
-            WHERE d.id = ? AND (d.id_user = ? OR ? = 'admin')
-        ");
-        $stmt->execute([$id, $_SESSION['user_id'], $_SESSION['user_role']]);
-        
-        if (!$stmt->fetch()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'No tienes permiso para eliminar este dispositivo']);
-            exit();
-        }
-        
-        // Eliminar dispositivo y sus lecturas (cascade)
-        $stmt = $conn->prepare("DELETE FROM devices WHERE id = ?");
-        $stmt->execute([$id]);
-        
-        echo json_encode(['success' => true, 'message' => 'Dispositivo eliminado correctamente']);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Error al eliminar el dispositivo']);
+header('Content-Type: application/json');
+
+// Obtener datos del cuerpo de la petición
+$data = json_decode(file_get_contents('php://input'), true);
+
+// Validar que se proporcionó un ID
+if (!isset($data['id'])) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'ID no proporcionado']);
+    exit;
+}
+
+try {
+    $conn->beginTransaction();
+
+    // Eliminar lecturas asociadas al dispositivo
+    $stmt = $conn->prepare("DELETE FROM lecturas WHERE id_device = ?");
+    $stmt->execute([$data['id']]);
+
+    // Eliminar el dispositivo
+    $stmt = $conn->prepare("DELETE FROM devices WHERE id = ?");
+    $stmt->execute([$data['id']]);
+
+    if ($stmt->rowCount() === 0) {
+        throw new Exception('Dispositivo no encontrado');
     }
-} else {
-    http_response_code(405);
-    echo json_encode(['error' => 'Método no permitido']);
+
+    $conn->commit();
+    echo json_encode(['success' => true]);
+} catch (Exception $e) {
+    $conn->rollBack();
+    error_log("Error al eliminar dispositivo: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?> 

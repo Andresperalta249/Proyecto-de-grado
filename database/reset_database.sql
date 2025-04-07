@@ -1,9 +1,12 @@
+-- Eliminar la base de datos si existe
+DROP DATABASE IF EXISTS pet_monitoring;
+
 -- Crear la base de datos
-CREATE DATABASE IF NOT EXISTS pet_monitoring;
+CREATE DATABASE pet_monitoring;
 USE pet_monitoring;
 
 -- Tabla de roles
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,
@@ -12,7 +15,7 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 -- Tabla de permisos
-CREATE TABLE IF NOT EXISTS permisos (
+CREATE TABLE permisos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,
@@ -20,7 +23,7 @@ CREATE TABLE IF NOT EXISTS permisos (
 );
 
 -- Tabla de roles_permisos
-CREATE TABLE IF NOT EXISTS roles_permisos (
+CREATE TABLE roles_permisos (
     id_rol INT NOT NULL,
     id_permiso INT NOT NULL,
     PRIMARY KEY (id_rol, id_permiso),
@@ -29,7 +32,7 @@ CREATE TABLE IF NOT EXISTS roles_permisos (
 );
 
 -- Tabla de usuarios
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     correo VARCHAR(100) NOT NULL UNIQUE,
@@ -43,7 +46,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Tabla de mascotas
-CREATE TABLE IF NOT EXISTS mascotas (
+CREATE TABLE mascotas (
     id INT PRIMARY KEY AUTO_INCREMENT,
     id_user INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
@@ -55,7 +58,7 @@ CREATE TABLE IF NOT EXISTS mascotas (
 );
 
 -- Tabla de dispositivos
-CREATE TABLE IF NOT EXISTS devices (
+CREATE TABLE devices (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_mascota INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
@@ -65,17 +68,19 @@ CREATE TABLE IF NOT EXISTS devices (
 );
 
 -- Tabla de lecturas
-CREATE TABLE IF NOT EXISTS lecturas (
+CREATE TABLE lecturas (
     id INT PRIMARY KEY AUTO_INCREMENT,
     id_device INT NOT NULL,
     temperatura DECIMAL(4,2) NOT NULL,
     ritmo_cardiaco INT NOT NULL,
+    latitud DECIMAL(10,8) NOT NULL,
+    longitud DECIMAL(11,8) NOT NULL,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_device) REFERENCES devices(id)
 );
 
 -- Tabla de logs
-CREATE TABLE IF NOT EXISTS logs (
+CREATE TABLE logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT,
     accion VARCHAR(255) NOT NULL,
@@ -112,31 +117,81 @@ FROM roles r, permisos p
 WHERE r.nombre = 'Usuario Normal' 
 AND p.nombre IN ('gestion_mascotas', 'gestion_dispositivos', 'ver_dashboard');
 
--- Insertar usuario administrador por defecto
-INSERT INTO users (nombre, correo, password, id_rol) 
-SELECT 'Administrador', 'admin@petmonitoring.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', id
-FROM roles
-WHERE nombre = 'Administrador';
+-- Insertar usuarios de prueba
+-- Contraseña: admin123 para todos los usuarios
+INSERT INTO users (nombre, correo, password, id_rol) VALUES
+('Administrador', 'admin@petmonitoring.com', '$2y$10$8nUrgUXHhWvuOOJ4KRYkPOZnHUYxJjz3zYAk8YLhwGW6cK3qfGHOi', 1),
+('Juan Pérez', 'juan@example.com', '$2y$10$8nUrgUXHhWvuOOJ4KRYkPOZnHUYxJjz3zYAk8YLhwGW6cK3qfGHOi', 2),
+('María García', 'maria@example.com', '$2y$10$8nUrgUXHhWvuOOJ4KRYkPOZnHUYxJjz3zYAk8YLhwGW6cK3qfGHOi', 2);
 
--- Insertar datos de prueba para las lecturas
-INSERT INTO lecturas (id_device, temperatura, ritmo_cardiaco, fecha_registro) VALUES
-(1, 38.5, 85, DATE_SUB(NOW(), INTERVAL 20 MINUTE)),
-(1, 38.2, 82, DATE_SUB(NOW(), INTERVAL 19 MINUTE)),
-(1, 38.7, 88, DATE_SUB(NOW(), INTERVAL 18 MINUTE)),
-(1, 38.4, 84, DATE_SUB(NOW(), INTERVAL 17 MINUTE)),
-(1, 38.6, 86, DATE_SUB(NOW(), INTERVAL 16 MINUTE)),
-(1, 38.3, 83, DATE_SUB(NOW(), INTERVAL 15 MINUTE)),
-(1, 38.8, 89, DATE_SUB(NOW(), INTERVAL 14 MINUTE)),
-(1, 38.5, 85, DATE_SUB(NOW(), INTERVAL 13 MINUTE)),
-(1, 38.4, 84, DATE_SUB(NOW(), INTERVAL 12 MINUTE)),
-(1, 38.6, 86, DATE_SUB(NOW(), INTERVAL 11 MINUTE)),
-(1, 38.7, 87, DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
-(1, 38.5, 85, DATE_SUB(NOW(), INTERVAL 9 MINUTE)),
-(1, 38.3, 83, DATE_SUB(NOW(), INTERVAL 8 MINUTE)),
-(1, 38.6, 86, DATE_SUB(NOW(), INTERVAL 7 MINUTE)),
-(1, 38.4, 84, DATE_SUB(NOW(), INTERVAL 6 MINUTE)),
-(1, 38.5, 85, DATE_SUB(NOW(), INTERVAL 5 MINUTE)),
-(1, 38.7, 87, DATE_SUB(NOW(), INTERVAL 4 MINUTE)),
-(1, 38.6, 86, DATE_SUB(NOW(), INTERVAL 3 MINUTE)),
-(1, 38.5, 85, DATE_SUB(NOW(), INTERVAL 2 MINUTE)),
-(1, 38.4, 84, DATE_SUB(NOW(), INTERVAL 1 MINUTE)); 
+-- Insertar mascotas para Juan Pérez
+INSERT INTO mascotas (id_user, nombre, tipo, tamano, fecha_nacimiento) VALUES
+(2, 'Max', 'Perro', 'Grande', '2020-05-15'),
+(2, 'Luna', 'Gato', 'Pequeño', '2021-03-10'),
+(2, 'Rocky', 'Perro', 'Mediano', '2019-12-20');
+
+-- Insertar mascotas para María García
+INSERT INTO mascotas (id_user, nombre, tipo, tamano, fecha_nacimiento) VALUES
+(3, 'Milo', 'Gato', 'Pequeño', '2021-08-05'),
+(3, 'Bella', 'Perro', 'Grande', '2020-01-15'),
+(3, 'Simba', 'Gato', 'Mediano', '2022-04-30');
+
+-- Insertar dispositivos para cada mascota
+INSERT INTO devices (id_mascota, nombre, token_acceso) VALUES
+(1, 'Collar Max', MD5(RAND())),
+(2, 'Collar Luna', MD5(RAND())),
+(3, 'Collar Rocky', MD5(RAND())),
+(4, 'Collar Milo', MD5(RAND())),
+(5, 'Collar Bella', MD5(RAND())),
+(6, 'Collar Simba', MD5(RAND()));
+
+-- Función para generar lecturas aleatorias
+DELIMITER //
+CREATE FUNCTION rand_decimal(min_val DECIMAL(10,2), max_val DECIMAL(10,2)) 
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    RETURN min_val + (RAND() * (max_val - min_val));
+END //
+DELIMITER ;
+
+-- Insertar lecturas aleatorias para cada dispositivo
+DELIMITER //
+CREATE PROCEDURE generate_readings()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE j INT DEFAULT 1;
+    DECLARE base_lat DECIMAL(10,8) DEFAULT 4.570868; -- Coordenadas base cerca de Bogotá
+    DECLARE base_lon DECIMAL(11,8) DEFAULT -74.297333;
+    
+    WHILE j <= 6 DO -- Para cada dispositivo
+        SET i = 1;
+        WHILE i <= 75 DO -- 75 lecturas por dispositivo
+            INSERT INTO lecturas (
+                id_device, 
+                temperatura, 
+                ritmo_cardiaco,
+                latitud,
+                longitud,
+                fecha_registro
+            ) VALUES (
+                j,
+                rand_decimal(37.5, 39.5),
+                FLOOR(rand_decimal(70, 100)),
+                base_lat + (RAND() * 0.002),
+                base_lon + (RAND() * 0.002),
+                DATE_SUB(NOW(), INTERVAL i MINUTE)
+            );
+            SET i = i + 1;
+        END WHILE;
+        SET j = j + 1;
+    END WHILE;
+END //
+DELIMITER ;
+
+-- Ejecutar el procedimiento para generar las lecturas
+CALL generate_readings();
+
+-- Limpiar
+DROP PROCEDURE IF EXISTS generate_readings;
+DROP FUNCTION IF EXISTS rand_decimal; 

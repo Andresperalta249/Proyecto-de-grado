@@ -16,61 +16,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $correo = trim($_POST['correo']);
     $password = $_POST['password'];
     
-    if (empty($correo) || empty($password)) {
-        $error = "Por favor, complete todos los campos.";
-    } else {
-        try {
-            // Verificar si el usuario está bloqueado
-            if (usuarioBloqueado($conn, $correo)) {
-                $error = "Su cuenta está bloqueada por múltiples intentos fallidos. Por favor, contacte al administrador.";
-            } else {
-                $sql = "SELECT u.*, r.nombre as rol_nombre 
-                        FROM users u 
-                        JOIN roles r ON u.id_rol = r.id 
-                        WHERE u.correo = :correo";
-                
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([':correo' => $correo]);
-                
-                if ($stmt->rowCount() == 1) {
-                    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-                    
-                    if (password_verify($password, $usuario['password'])) {
-                        // Login exitoso
-                        $_SESSION['user_id'] = $usuario['id'];
-                        $_SESSION['nombre'] = $usuario['nombre'];
-                        $_SESSION['rol'] = $usuario['rol_nombre'];
-                        
-                        // Reiniciar intentos fallidos
-                        reiniciarIntentosFallidos($conn, $correo);
-                        
-                        // Registrar el acceso exitoso
-                        registrarLog($conn, $usuario['id'], 'Inicio de sesión', 'Acceso exitoso desde IP: ' . $_SERVER['REMOTE_ADDR']);
-                        actualizarUltimoAcceso($conn, $usuario['id']);
-                        
-                        $mensaje = "¡Bienvenido/a " . $usuario['nombre'] . "!";
-                        
-                        // Redirigir según el rol
-                        if ($usuario['rol_nombre'] == 'Administrador') {
-                            header("Location: admin/dashboard.php");
-                        } else {
-                            header("Location: dashboard.php");
-                        }
-                        exit();
-                    } else {
-                        incrementarIntentosFallidos($conn, $correo);
-                        $error = "Credenciales incorrectas. Por favor, verifique sus datos.";
-                        error_log("Intento fallido de inicio de sesión para el correo: " . $correo);
-                    }
-                } else {
-                    $error = "Credenciales incorrectas. Por favor, verifique sus datos.";
-                    error_log("Intento de inicio de sesión con correo no registrado: " . $correo);
-                }
-            }
-        } catch (PDOException $e) {
-            $error = "Ha ocurrido un error durante el inicio de sesión. Por favor, intente más tarde.";
-            error_log("Error en inicio de sesión: " . $e->getMessage());
+    try {
+        // Verificar si la cuenta existe
+        $stmt = $conn->prepare("
+            SELECT u.*, r.nombre as rol_nombre
+            FROM users u
+            INNER JOIN roles r ON u.id_rol = r.id
+            WHERE u.correo = :correo
+        ");
+        $stmt->execute(['correo' => $correo]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Guardar información de depuración
+        error_log("Intento de login - Email: " . $correo);
+        if ($user) {
+            error_log("Usuario encontrado - ID: " . $user['id'] . ", Rol: " . $user['rol_nombre']);
+            error_log("Hash almacenado: " . $user['password']);
+            error_log("Verificación de contraseña: " . (password_verify($password, $user['password']) ? "CORRECTA" : "INCORRECTA"));
+        } else {
+            error_log("Usuario no encontrado en la base de datos");
         }
+
+        if ($user && $user['bloqueado']) {
+            $_SESSION['error'] = 'Esta cuenta está bloqueada. Por favor, contacte al administrador.';
+            error_log("Intento de acceso a cuenta bloqueada: " . $correo);
+        } elseif ($user && password_verify($password, $user['password'])) {
+            // Login exitoso
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['nombre'] = $user['nombre'];
+            $_SESSION['rol'] = $user['rol_nombre'];
+
+            // Actualizar último acceso
+            $stmt = $conn->prepare("
+                UPDATE users 
+                SET ultimo_acceso = CURRENT_TIMESTAMP,
+                    intentos_fallidos = 0
+                WHERE id = :id
+            ");
+            $stmt->execute(['id' => $user['id']]);
+
+            // Registrar el acceso exitoso
+            $stmt = $conn->prepare("
+                INSERT INTO logs (id_user, accion, detalles, ip_address) 
+                VALUES (:id_user, 'login_exitoso', :detalles, :ip)
+            ");
+            $stmt->execute([
+                'id_user' => $user['id'],
+                'detalles' => 'Login exitoso desde ' . $_SERVER['HTTP_USER_AGENT'],
+                'ip' => $_SERVER['REMOTE_ADDR']
+            ]);
+
+            error_log("Login exitoso - Usuario: " . $user['nombre'] . ", Rol: " . $user['rol_nombre']);
+
+            // Redirigir según el rol
+            if ($user['rol_nombre'] === 'Administrador') {
+                header('Location: admin_dashboard.php');
+            } else {
+                header('Location: dashboard.php');
+            }
+            exit();
+        } else {
+            if ($user) {
+                // Incrementar intentos fallidos
+                $stmt = $conn->prepare("
+                    UPDATE users 
+                    SET intentos_fallidos = intentos_fallidos + 1,
+                        bloqueado = CASE WHEN intentos_fallidos + 1 >= 5 THEN 1 ELSE bloqueado END
+                    WHERE id = :id
+                ");
+                $stmt->execute(['id' => $user['id']]);
+
+                error_log("Intento fallido - Usuario: " . $user['nombre'] . " - Intentos fallidos: " . ($user['intentos_fallidos'] + 1));
+            }
+            $_SESSION['error'] = 'Correo o contraseña incorrectos';
+        }
+    } catch (PDOException $e) {
+        error_log("Error en login.php: " . $e->getMessage());
+        $_SESSION['error'] = 'Error al intentar iniciar sesión';
     }
 }
 ?>
@@ -93,6 +115,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <h4 class="mb-0">Iniciar Sesión</h4>
                     </div>
                     <div class="card-body">
+                        <?php if (isset($_SESSION['error'])): ?>
+                            <div class="alert alert-danger">
+                                <?php 
+                                echo $_SESSION['error'];
+                                unset($_SESSION['error']);
+                                ?>
+                            </div>
+                        <?php endif; ?>
                         <form id="loginForm" method="POST" action="" class="needs-validation" novalidate>
                             <div class="mb-3">
                                 <label for="correo" class="form-label">Correo Electrónico</label>
